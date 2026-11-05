@@ -1,6 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- BLE Feature Declaration (Optional to allow app installation on devices without BLE) -->
+    <uses-feature
+        android:name="android.hardware.bluetooth_le"
+        android:required="false" />
+
+    <!-- Legacy Bluetooth permissions for Android 8.0 - Android 11 (API 26-30) -->
+    <uses-permission
+        android:name="android.permission.BLUETOOTH"
+        android:maxSdkVersion="30" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_ADMIN"
+        android:maxSdkVersion="30" />
+
+    <!--
+      Location permission required on Android 8.0 - Android 11 to obtain BLE scan results.
+      On Android 12+ (API 31+), BLUETOOTH_SCAN is used instead.
+    -->
+    <uses-permission
+        android:name="android.permission.ACCESS_FINE_LOCATION"
+        android:maxSdkVersion="30" />
+
+    <!--
+      Android 12+ (API 31+) Bluetooth Low Energy Scanning permission.
+      NOTE: android:usesPermissionFlags="neverForLocation" is deliberately NOT set.
+      Android documentation explicitly states that asserting neverForLocation prevents the
+      app from detecting certain BLE beacons (such as iBeacon/Eddystone or unassociated beacons).
+      To preserve comprehensive observation coverage of nearby signals without silent beacon filtering,
+      we request BLUETOOTH_SCAN without neverForLocation.
+    -->
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_SCAN" />
+
     <application
         android:allowBackup="false"
         android:icon="@android:drawable/sym_def_app_icon"

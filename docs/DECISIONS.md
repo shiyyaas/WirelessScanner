@@ -62,3 +62,40 @@ Domain models (`RadioType`, `Observation`, `SignalStrength`, `ReceiverSource`) s
 
 ### Status
 Accepted.
+
+---
+
+## ADR 004: BLE Scanning Permissions and `neverForLocation` Evaluation
+
+### Context
+Android 12 (API 31) introduced fine-grained runtime Bluetooth permissions (`BLUETOOTH_SCAN`, `BLUETOOTH_CONNECT`, `BLUETOOTH_ADVERTISE`). Apps can optionally assert `android:usesPermissionFlags="neverForLocation"` on `BLUETOOTH_SCAN` to promise they do not infer physical location from scan results.
+However, official Android Bluetooth documentation explicitly warns:
+> *If you omit this attribute, the system may filter scan results to prevent your app from deriving physical location from beacons.* In practice, setting `neverForLocation` causes Android to silently drop or filter beacon packets (such as iBeacon, Eddystone, and unassociated BLE advertisements).
+
+WirelessScanner is an observational diagnostic tool whose purpose is passive, comprehensive transparency into local wireless traffic. Silently filtering beacon traffic directly contradicts the application's core requirement of faithful signal observation.
+
+### Decision
+- Request `ACCESS_FINE_LOCATION` with `android:maxSdkVersion="30"` on Android 8.0–11 (API 26–30), as required by legacy Android to deliver BLE scan results.
+- Request `BLUETOOTH_SCAN` on Android 12+ (API 31–36) **without** `neverForLocation`, ensuring full beacon discovery and raw advertisement observation.
+- Do NOT request `BLUETOOTH_CONNECT` or `BLUETOOTH_ADVERTISE` as active connections and broadcasts are out of scope.
+- Explain the rationale clearly to the user in the UI and documentation so they understand why nearby device permissions are necessary.
+
+### Status
+Accepted.
+
+---
+
+## ADR 005: In-Memory BLE Aggregation and Address Randomization Considerations
+
+### Context
+BLE peripherals commonly broadcast with Resolvable Private Addresses (RPA) or Non-resolvable Private Addresses that rotate periodically (every 15 minutes by default on iOS and Android) to preserve user privacy. In addition, multiple devices from the same manufacturer or with common generic names (e.g. "Smart Band", "Headphones") may advertise simultaneously in the same environment.
+
+### Decision
+- Aggregation is strictly keyed by `rawAddress` within the active scanning session.
+- Two observations with matching advertised names but different addresses must NEVER be merged into a single device entity.
+- Two observations with different addresses must NEVER be presumed to represent the same physical device.
+- RSSI is maintained in a rolling window capped to 30 samples, and a rolling median RSSI is computed for display. Median RSSI is documented strictly as relative signal strength, never physical distance.
+- Raw byte payloads are converted into immutable `List<Byte>` before leaving the scanner boundary.
+
+### Status
+Accepted.

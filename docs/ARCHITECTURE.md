@@ -26,9 +26,7 @@ This document outlines the architectural principles, component structure, and de
 
 ---
 
-## Module Structure
-
-The project starts with a focused foundation avoiding premature multi-module overhead while strictly enforcing domain purity:
+## Module Structure & BLE Component Architecture
 
 ```
 WirelessScanner/
@@ -36,23 +34,27 @@ WirelessScanner/
 │   └── model/              # Pure Kotlin JVM module (no Android dependencies)
 │       └── Domain models (RadioType, ReceiverSource, Observation, SignalStrength)
 ├── app/                    # Android Application module
-│   ├── ui/                 # Jetpack Compose UI, Material 3 Theme, Navigation
-│   │   ├── dashboard/      # Overview dashboard
-│   │   ├── observations/   # Observation list and inspection
-│   │   ├── receivers/      # Hardware & receiver status
-│   │   ├── settings/       # App settings & preferences
-│   │   └── navigation/     # NavHost and Destination graph
-│   └── collector/          # Temporary collector contracts (future :core:scanner-api)
+│   ├── ble/                # Bluetooth Low Energy Discovery
+│   │   ├── aggregator/     # BleDeviceAggregator (rolling median, count, history)
+│   │   ├── model/          # DiscoveredBleDevice domain model & BleAddressType
+│   │   ├── permission/     # BlePermissionManager, BluetoothStateManager
+│   │   └── scanner/        # AndroidBleScanner, BleScanSessionManager, BleScanResultMapper
+│   ├── collector/          # RadioCollector abstraction & CollectorStatus
+│   └── ui/                 # Jetpack Compose UI, Material 3 Theme, Navigation
+│       ├── dashboard/      # Overview dashboard
+│       ├── observations/   # Observation feed, controls & ViewModel
+│       ├── receivers/      # Hardware & receiver status
+│       ├── settings/       # App settings & preferences
+│       └── navigation/     # NavHost and Destination graph
 └── docs/                   # Architecture, Roadmap, and Decision records
 ```
 
-### Planned Future Modules
-- `:core:scanner-api`: Abstractions for pluggable radio collectors (`RadioCollector`, `ScanConfig`, `ScanStatus`).
-- `:core:ble`: Android BLE Scanner implementation using `android.bluetooth.le`.
-- `:core:wifi`: Android Wi-Fi Scanner implementation using `android.net.wifi.WifiManager`.
-- `:core:receiver-usb`: USB Serial / OTG driver for optional ESP32 receivers.
-- `:core:database`: Room persistence for observation history and sessions.
-- `:core:classifier`: Evidence-based signature matching library.
+### Bluetooth Low Energy Observation Flow
+1. **Hardware Scanner Abstraction**: `BleHardwareScanner` decouples the low-level Android `BluetoothLeScanner` from session logic. `AndroidBleScanner` uses `callbackFlow` to safely stream scan results and cleanly release scanner callbacks upon completion or cancellation.
+2. **Result Parsing & Immutability**: `BleScanResultMapper` safely maps `ScanResult` and `ScanRecord` to `Observation` (`RadioType.BLE`, `ReceiverSource.Internal`), ensuring byte arrays are immutably preserved as `List<Byte>`.
+3. **Session Management**: `BleScanSessionManager` orchestrates user-controlled 15-second discovery sessions, preventing concurrent duplicate scans, exposing live countdown metrics, and automatically halting on timeout.
+4. **In-Memory Aggregation**: `BleDeviceAggregator` groups observations by unique `rawAddress`, preserving first/last seen timestamps, count, latest RSSI, a 30-sample rolling RSSI history, rolling median calculation, and merging late-arriving advertised names.
+5. **Presentation Layer**: `ObservationsViewModel` and `ObservationsScreen` expose user controls (Start/Stop, filter by name/query, sort by signal/time/count), hardware banners (Bluetooth disabled, permission required), and expandable advertisement details.
 
 ---
 
@@ -74,5 +76,5 @@ data class Observation(
 )
 ```
 
-- `rawPayload` is stored as an immutable `List<Byte>` (or defensively copied array) to prevent external mutation.
+- `rawPayload` is stored as an immutable `List<Byte>` to prevent external mutation.
 - `receiverSource` explicitly tags whether an observation was received by the Android device's internal radio or by an external hardware peripheral.

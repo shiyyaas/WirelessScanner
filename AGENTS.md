@@ -51,7 +51,7 @@ The app is intended for lawful, passive observation and analysis. Do not impleme
    - `./gradlew :core:model:test`
    - `./gradlew :app:testDebugUnitTest`
    - `./gradlew :app:assembleDebug`
-3. **No Unimplemented Radios in Phase 1**: Actual BLE scanning, Wi-Fi scanning, cellular scanning, USB communication, and signature classification are strictly deferred to future milestones.
+3. **Status After Phase 2**: BLE scanning is fully implemented using `android.bluetooth.le`. Future phases will address Wi-Fi scanning (Phase 3), Room persistence (Phase 4), ESP32 USB receiver (Phase 5), and signal radar/classification (Phase 6).
 
 ---
 
@@ -59,10 +59,10 @@ The app is intended for lawful, passive observation and analysis. Do not impleme
 
 If you are continuing work on WirelessScanner:
 - Review `docs/ARCHITECTURE.md` for design boundaries and provenance rules.
-- Review `docs/DECISIONS.md` for historical ADRs.
+- Review `docs/DECISIONS.md` for historical ADRs (including ADR 004 on `neverForLocation` and ADR 005 on BLE aggregation).
 - Check `docs/ROADMAP.md` for the current milestone target.
-- For Phase 2 (BLE Observation):
-  - Introduce `:core:scanner-api` to formalize the `RadioCollector` interface.
-  - Create `:core:ble` to implement Android BLE scanning with runtime permission guards.
-  - Connect the collector to `:app:ui:screens:observations`.
+- For Phase 3 (Android Wi-Fi Observation):
+  - Implement Wi-Fi scanning using `WifiManager.getScanResults()` with Wi-Fi scan throttling awareness.
+  - Handle location permission requirements on legacy Android and Android 13+ Wi-Fi permissions.
+  - Normalize Wi-Fi access point observations into the shared domain `Observation` model.
 - Keep `:core:model` free of Android SDK dependencies.
