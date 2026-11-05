@@ -5,6 +5,10 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -30,8 +34,16 @@ jobs:
       - name: Run Core Model Unit Tests
         run: ./gradlew :core:model:test --no-daemon
 
-      - name: Run App Unit Tests
+      -  name: Run App Unit Tests
         run: ./gradlew :app:testDebugUnitTest --no-daemon
 
       - name: Assemble Debug APK
         run: ./gradlew :app:assembleDebug --no-daemon
+
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: WirelessScanner-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
