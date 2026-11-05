@@ -3,12 +3,14 @@ name: Android CI
 on:
   push:
     branches: [ "main" ]
+    tags:
+      - 'v*' # Triggers the release process when you push a tag like v1.0.0
   pull_request:
     branches: [ "main" ]
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write # Required to create a GitHub Release and upload assets
 
 jobs:
   build:
@@ -36,13 +38,27 @@ jobs:
       - name: Run App Unit Tests
         run: ./gradlew :app:testDebugUnitTest --no-daemon
 
-      - name: Assemble Debug APK
-        run: ./gradlew :app:assembleDebug --no-daemon
+      - name: Assemble Release APK
+        # If it's a tag, we build the release variant instead of debug
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            ./gradlew :app:assembleRelease --no-daemon
+          else
+            ./gradlew :app:assembleDebug --no-daemon
+          fi
 
-      - name: Upload Debug APK
+      - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: WirelessScanner-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          name: WirelessScanner-apk
+          path: app/build/outputs/apk/**/*.apk
           if-no-files-found: error
           retention-days: 14
+
+      - name: Create GitHub Release
+        # This step only runs if you explicitly push a version tag (like v1.0.1)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: app/build/outputs/apk/release/*.apk
+          generate_release_notes: true
