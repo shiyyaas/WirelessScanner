@@ -4,7 +4,7 @@ This roadmap defines the planned evolutionary phases for WirelessScanner. Each p
 
 ---
 
-## Phase 1: Project Foundation (Current Phase)
+## Phase 1: Project Foundation (Completed)
 - [x] Initial project scaffolding with Gradle Kotlin DSL and version catalog (`libs.versions.toml`).
 - [x] Toolchain configuration: AGP 8.9.1, Gradle 8.11.1, Kotlin 2.2.0, JDK 21, compileSdk 36.
 - [x] Pure domain module `:core:model` for platform-independent immutable observation records.
@@ -13,22 +13,23 @@ This roadmap defines the planned evolutionary phases for WirelessScanner. Each p
 - [x] Unit test infrastructure for domain models and UI states.
 - [x] Android-suitable `.gitignore` and GitHub Actions CI workflow.
 - [x] Architectural documentation, ADRs, and roadmap.
-- *Strict restriction: No actual BLE, Wi-Fi, cellular, or USB radio scanning in this phase.*
 
 ---
 
-## Phase 2: Radio Collector Architecture & Android BLE Observation
-- [ ] Create `:core:scanner-api` module defining pluggable `RadioCollector` lifecycle, scan configurations, and status state flows.
-- [ ] Implement `:core:ble` Android BLE observation module using `android.bluetooth.le`.
-- [ ] Implement Android 12+ runtime permissions handling (`BLUETOOTH_SCAN`, `ACCESS_FINE_LOCATION`).
-- [ ] Handle Bluetooth hardware states (disabled, unsupported, throttling).
-- [ ] Raw advertisement parsing (UUIDs, manufacturer data, Tx power) normalized into `Observation`.
-- [ ] BLE observation feed in `:app:ui:observations`.
+## Phase 2: Bluetooth Low Energy (BLE) Discovery (Completed)
+- [x] Pluggable `RadioCollector` lifecycle implementation (`BleScanSessionManager`).
+- [x] Android BLE scanner implementation (`AndroidBleScanner`) using `callbackFlow` and `BluetoothLeScanner`.
+- [x] Android 8–11 (`ACCESS_FINE_LOCATION`) and Android 12+ (`BLUETOOTH_SCAN`) runtime permission handling with transparent `neverForLocation` omission.
+- [x] Bluetooth hardware state monitoring (`BluetoothStateManager`).
+- [x] Raw advertisement parsing (`BleScanResultMapper`) extracting names, UUIDs, manufacturer data, service data, Tx power, and connectability.
+- [x] In-memory session aggregation (`BleDeviceAggregator`) with 30-sample history windows, rolling median RSSI, and observation counts.
+- [x] BLE observation feed in `:app:ui:screens:observations` with live countdown, controls, search/filter, and expandable device cards.
+- [x] Comprehensive unit tests with fake scanner implementations.
 
 ---
 
 ## Phase 3: Android Wi-Fi Observation & Deduplication Feed
-- [ ] Implement `:core:wifi` module using Android Wi-Fi scan results (`WifiManager.getScanResults()`).
+- [ ] Implement Wi-Fi observation collector using Android Wi-Fi scan results (`WifiManager.getScanResults()`).
 - [ ] Handle Wi-Fi permissions, scan throttling, and location service requirements.
 - [ ] Normalize Wi-Fi access point observations (SSID, BSSID, RSSI, frequency, capabilities) into `Observation`.
 - [ ] Real-time observation deduplication feed presenting multi-radio signals while preserving source provenance.
