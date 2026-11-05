@@ -14,7 +14,6 @@ jobs:
   build:
     name: Build & Test
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -34,7 +33,7 @@ jobs:
       - name: Run Core Model Unit Tests
         run: ./gradlew :core:model:test --no-daemon
 
-      -  name: Run App Unit Tests
+      - name: Run App Unit Tests
         run: ./gradlew :app:testDebugUnitTest --no-daemon
 
       - name: Assemble Debug APK
