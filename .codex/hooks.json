@@ -1,0 +1,128 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"C:\\\\Users\\\\shiya\\\\AppData\\\\Local\\\\npm-cache\\\\_npx\\\\0948303688028aea\\\\node_modules\\\\qarinah\\\\bin\\\\qarinah.js\" hook codex --quiet",
+            "timeout": 15,
+            "statusMessage": "Recording permitted Qarinah project memory"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"C:\\\\Users\\\\shiya\\\\AppData\\\\Local\\\\npm-cache\\\\_npx\\\\0948303688028aea\\\\node_modules\\\\qarinah\\\\bin\\\\qarinah.js\" hook codex --quiet",
+            "timeout": 15,
+            "statusMessage": "Recording permitted Qarinah project memory"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"C:\\\\Users\\\\shiya\\\\AppData\\\\Local\\\\npm-cache\\\\_npx\\\\0948303688028aea\\\\node_modules\\\\qarinah\\\\bin\\\\qarinah.js\" hook codex --quiet",
+            "timeout": 15,
+            "statusMessage": "Recording permitted Qarinah project memory"
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"C:\\\\Users\\\\shiya\\\\AppData\\\\Local\\\\npm-cache\\\\_npx\\\\0948303688028aea\\\\node_modules\\\\qarinah\\\\bin\\\\qarinah.js\" hook codex --quiet",
+            "timeout": 15,
+            "statusMessage": "Recording permitted Qarinah project memory"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"C:\\\\Users\\\\shiya\\\\AppData\\\\Local\\\\npm-cache\\\\_npx\\\\0948303688028aea\\\\node_modules\\\\qarinah\\\\bin\\\\qarinah.js\" hook codex --quiet",
+            "timeout": 15,
+            "statusMessage": "Recording permitted Qarinah project memory"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"C:\\\\Users\\\\shiya\\\\AppData\\\\Local\\\\npm-cache\\\\_npx\\\\0948303688028aea\\\\node_modules\\\\qarinah\\\\bin\\\\qarinah.js\" hook codex --quiet",
+            "timeout": 15,
+            "statusMessage": "Recording permitted Qarinah project memory"
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"C:\\\\Users\\\\shiya\\\\AppData\\\\Local\\\\npm-cache\\\\_npx\\\\0948303688028aea\\\\node_modules\\\\qarinah\\\\bin\\\\qarinah.js\" hook codex --quiet",
+            "timeout": 15,
+            "statusMessage": "Recording permitted Qarinah project memory"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"C:\\\\Users\\\\shiya\\\\AppData\\\\Local\\\\npm-cache\\\\_npx\\\\0948303688028aea\\\\node_modules\\\\qarinah\\\\bin\\\\qarinah.js\" hook codex --quiet",
+            "timeout": 15,
+            "statusMessage": "Recording permitted Qarinah project memory"
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"C:\\\\Users\\\\shiya\\\\AppData\\\\Local\\\\npm-cache\\\\_npx\\\\0948303688028aea\\\\node_modules\\\\qarinah\\\\bin\\\\qarinah.js\" hook codex --quiet",
+            "timeout": 15,
+            "statusMessage": "Recording permitted Qarinah project memory"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"C:\\\\Users\\\\shiya\\\\AppData\\\\Local\\\\npm-cache\\\\_npx\\\\0948303688028aea\\\\node_modules\\\\qarinah\\\\bin\\\\qarinah.js\" hook codex --quiet",
+            "timeout": 15,
+            "statusMessage": "Recording permitted Qarinah project memory"
+          }
+        ]
+      }
+    ]
+  }
+}

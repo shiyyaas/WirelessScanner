@@ -34,20 +34,19 @@ This roadmap defines the planned evolutionary phases for WirelessScanner. Each p
 - [x] Normalize Wi-Fi access point observations (SSID, BSSID, RSSI, frequency, capabilities) into `Observation`.
 - [x] Implement dedicated Material 3 Wi-Fi discovery feed and channel analysis UI with sorting and filtering.
 - [x] Unit test coverage for result mapping, conversion, aggregation, and view models.
-
 ---
 
 ## Phase 4: Local Persistence with Room
 - [ ] Implement `:core:database` using Room for storing observation histories and scan sessions.
 - [ ] Exclude sensitive observation databases from Android cloud backup / auto-backup.
-- [ ] Provide user data controls: session naming, search, history export, and purge functionality.
+- [ ] Provide user data controls: session ónaming, search, history export, and purge functionality.
 
 ---
 
-## Phase 5: Optional External ESP32 USB Receiver Support
-- [ ] Implement `:core:receiver-usb` module using Android USB Host API / USB CDC serial driver.
-- [ ] Connect with external ESP32 microcontrollers (e.g. CYD / ESP32-S3).
-- [ ] Handle USB permissions, hot-plug attach/detach lifecycle, and baud rate negotiation.
+## Phase 5: ESP32 USB Receiver Infrastructure
+- [ ] Implement `:core:receiver-usb` module infrastructure for USB CDC serial communication.
+- [ ] Develop basic protocol parser for ESP32-S3 JSON observations.
+- [ ] Handle USB permissions and attach/detach lifecycle.
 - [ ] Distinguish internal Android observations from external ESP32 observations via `ReceiverSource.ExternalUsbReceiver`.
 
 ---
