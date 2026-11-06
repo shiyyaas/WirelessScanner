@@ -28,11 +28,12 @@ This roadmap defines the planned evolutionary phases for WirelessScanner. Each p
 
 ---
 
-## Phase 3: Android Wi-Fi Observation & Deduplication Feed
+## Phase 3: Wi-Fi Discovery & Unified Observation Engine
 - [ ] Implement Wi-Fi observation collector using Android Wi-Fi scan results (`WifiManager.getScanResults()`).
 - [ ] Handle Wi-Fi permissions, scan throttling, and location service requirements.
 - [ ] Normalize Wi-Fi access point observations (SSID, BSSID, RSSI, frequency, capabilities) into `Observation`.
-- [ ] Real-time observation deduplication feed presenting multi-radio signals while preserving source provenance.
+- [ ] Implement Unified Observation Engine to merge BLE and Wi-Fi feeds while preserving source provenance.
+- [ ] *Verification:* Verify scan throttling behavior on Android 10 and Android 15 (Target SDK 36).
 
 ---
 
@@ -43,10 +44,10 @@ This roadmap defines the planned evolutionary phases for WirelessScanner. Each p
 
 ---
 
-## Phase 5: Optional External ESP32 USB Receiver Support
-- [ ] Implement `:core:receiver-usb` module using Android USB Host API / USB CDC serial driver.
-- [ ] Connect with external ESP32 microcontrollers (e.g. CYD / ESP32-S3).
-- [ ] Handle USB permissions, hot-plug attach/detach lifecycle, and baud rate negotiation.
+## Phase 5: ESP32 USB Receiver Infrastructure
+- [ ] Implement `:core:receiver-usb` module infrastructure for USB CDC serial communication.
+- [ ] Develop basic protocol parser for ESP32-S3 JSON observations.
+- [ ] Handle USB permissions and attach/detach lifecycle.
 - [ ] Distinguish internal Android observations from external ESP32 observations via `ReceiverSource.ExternalUsbReceiver`.
 
 ---

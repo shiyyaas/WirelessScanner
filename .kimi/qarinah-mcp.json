@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "qarinah": {
+      "command": "D:\\Program Files\\NodeJS\\node.exe",
+      "args": [
+        "C:\\Users\\shiya\\AppData\\Local\\npm-cache\\_npx\\0948303688028aea\\node_modules\\qarinah\\bin\\qarinah.js",
+        "mcp"
+      ],
+      "cwd": "D:\\shiyas\\Desktop\\codes\\WirelessScanner"
+    }
+  }
+}
