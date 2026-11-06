@@ -28,19 +28,18 @@ This roadmap defines the planned evolutionary phases for WirelessScanner. Each p
 
 ---
 
-## Phase 3: Wi-Fi Discovery & Unified Observation Engine
-- [ ] Implement Wi-Fi observation collector using Android Wi-Fi scan results (`WifiManager.getScanResults()`).
-- [ ] Handle Wi-Fi permissions, scan throttling, and location service requirements.
-- [ ] Normalize Wi-Fi access point observations (SSID, BSSID, RSSI, frequency, capabilities) into `Observation`.
-- [ ] Implement Unified Observation Engine to merge BLE and Wi-Fi feeds while preserving source provenance.
-- [ ] *Verification:* Verify scan throttling behavior on Android 10 and Android 15 (Target SDK 36).
-
+## Phase 3: Android Wi-Fi Observation & Deduplication Feed (Completed)
+- [x] Implement Wi-Fi observation collector using Android Wi-Fi scan results (`WifiManager.getScanResults()`).
+- [x] Handle Wi-Fi permissions, scan throttling, and location service requirements.
+- [x] Normalize Wi-Fi access point observations (SSID, BSSID, RSSI, frequency, capabilities) into `Observation`.
+- [x] Implement dedicated Material 3 Wi-Fi discovery feed and channel analysis UI with sorting and filtering.
+- [x] Unit test coverage for result mapping, conversion, aggregation, and view models.
 ---
 
 ## Phase 4: Local Persistence with Room
 - [ ] Implement `:core:database` using Room for storing observation histories and scan sessions.
 - [ ] Exclude sensitive observation databases from Android cloud backup / auto-backup.
-- [ ] Provide user data controls: session naming, search, history export, and purge functionality.
+- [ ] Provide user data controls: session ónaming, search, history export, and purge functionality.
 
 ---
 

@@ -2,9 +2,11 @@ package app.wirelessscanner.ui.navigation
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Assessment
+import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Router
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.ui.graphics.vector.ImageVector
 
 /**
@@ -24,7 +26,13 @@ sealed class Screen(
     data object Observations : Screen(
         route = "observations",
         title = "Observations",
-        icon = Icons.Default.Assessment
+        icon = Icons.Default.Bluetooth
+    )
+
+    data object Wifi : Screen(
+        route = "wifi",
+        title = "Wi-Fi",
+        icon = Icons.Default.Wifi
     )
 
     data object Receivers : Screen(
@@ -44,6 +52,7 @@ sealed class Screen(
             listOf(
                 Dashboard,
                 Observations,
+                Wifi,
                 Receivers,
                 Settings
             )

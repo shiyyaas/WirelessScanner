@@ -60,9 +60,9 @@ fun DashboardScreen(modifier: Modifier = Modifier) {
             }
         }
 
-        StatusItem(label = "BLE Scanning", value = "Inactive (Milestone 2)")
-        StatusItem(label = "Wi-Fi Scanning", value = "Inactive (Milestone 3)")
-        StatusItem(label = "External USB Hardware", value = "Optional / Ready for Milestone 5")
+        StatusItem(label = "BLE Scanning", value = "Active (Phase 2 Discovery Implemented)")
+        StatusItem(label = "Wi-Fi Scanning", value = "Active (Phase 3 Discovery Implemented)")
+        StatusItem(label = "External USB Hardware", value = "Optional / Ready for Phase 5")
     }
 }
 
