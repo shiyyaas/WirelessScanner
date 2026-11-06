@@ -39,10 +39,17 @@ WirelessScanner/
 │   │   ├── model/          # DiscoveredBleDevice domain model & BleAddressType
 │   │   ├── permission/     # BlePermissionManager, BluetoothStateManager
 │   │   └── scanner/        # AndroidBleScanner, BleScanSessionManager, BleScanResultMapper
+│   ├── wifi/               # Wi-Fi Access Point Discovery
+│   │   ├── aggregator/     # WifiDeviceAggregator (BSSID grouping, median, 30-sample window)
+│   │   ├── model/          # DiscoveredWifiAccessPoint domain model, WifiBand, WifiSecurityType
+│   │   ├── permission/     # WifiPermissionManager
+│   │   ├── scanner/        # AndroidWifiScanner, WifiScanSessionManager, WifiScanResultMapper
+│   │   └── util/           # WifiFrequencyConverter (band, channel, width, security parsing)
 │   ├── collector/          # RadioCollector abstraction & CollectorStatus
 │   └── ui/                 # Jetpack Compose UI, Material 3 Theme, Navigation
 │       ├── dashboard/      # Overview dashboard
-│       ├── observations/   # Observation feed, controls & ViewModel
+│       ├── observations/   # BLE observation feed, controls & ViewModel
+│       ├── wifi/           # Wi-Fi discovery feed, channel analysis & ViewModel
 │       ├── receivers/      # Hardware & receiver status
 │       ├── settings/       # App settings & preferences
 │       └── navigation/     # NavHost and Destination graph
@@ -55,6 +62,13 @@ WirelessScanner/
 3. **Session Management**: `BleScanSessionManager` orchestrates user-controlled 15-second discovery sessions, preventing concurrent duplicate scans, exposing live countdown metrics, and automatically halting on timeout.
 4. **In-Memory Aggregation**: `BleDeviceAggregator` groups observations by unique `rawAddress`, preserving first/last seen timestamps, count, latest RSSI, a 30-sample rolling RSSI history, rolling median calculation, and merging late-arriving advertised names.
 5. **Presentation Layer**: `ObservationsViewModel` and `ObservationsScreen` expose user controls (Start/Stop, filter by name/query, sort by signal/time/count), hardware banners (Bluetooth disabled, permission required), and expandable advertisement details.
+
+### Wi-Fi Observation Flow
+1. **Hardware Scanner Abstraction**: `WifiHardwareScanner` decouples Android `WifiManager` operations from session logic. `AndroidWifiScanner` listens for `WifiManager.SCAN_RESULTS_AVAILABLE_ACTION` broadcasts via `callbackFlow`, safely releasing receiver registrations.
+2. **Throttling & Freshness Handling**: Checks the return value of `WifiManager.startScan()`. If false (throttled/busy), cached scan results are provided with clear user notifications. The broadcast `EXTRA_RESULTS_UPDATED` boolean indicates fresh vs stale/cached results.
+3. **Session Management**: `WifiScanSessionManager` implements `RadioCollector`, prevents concurrent overlapping scans via Mutex, tracks scan freshness (`ScanFreshness`), and records the last successful scan epoch timestamp.
+4. **In-Memory Aggregation**: `WifiDeviceAggregator` groups observations by unique BSSID (never SSID alone), updates first/last seen timestamps, maintains a 30-sample bounded RSSI history window, calculates rolling median RSSI, and ignores unchanged cached results from observation count increments.
+5. **Channel Analysis & Presentation**: `WifiViewModel` and `WifiScreen` provide access point discovery, sorting/filtering (band, security, signal, SSID), expandable AP cards, and channel utilization analysis (access point count and average RSSI per channel, noting that AP count does not prove channel congestion).
 
 ---
 

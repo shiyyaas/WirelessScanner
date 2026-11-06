@@ -71,6 +71,7 @@ Planned improvement:
 ---
 
 # 2. Phase 3 — Wi-Fi Access Point Discovery
+*Status: COMPLETED*
 
 *Goal:* Implement passive Wi-Fi access point discovery using standard Android Wi-Fi APIs.
 

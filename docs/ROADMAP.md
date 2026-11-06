@@ -28,11 +28,12 @@ This roadmap defines the planned evolutionary phases for WirelessScanner. Each p
 
 ---
 
-## Phase 3: Android Wi-Fi Observation & Deduplication Feed
-- [ ] Implement Wi-Fi observation collector using Android Wi-Fi scan results (`WifiManager.getScanResults()`).
-- [ ] Handle Wi-Fi permissions, scan throttling, and location service requirements.
-- [ ] Normalize Wi-Fi access point observations (SSID, BSSID, RSSI, frequency, capabilities) into `Observation`.
-- [ ] Real-time observation deduplication feed presenting multi-radio signals while preserving source provenance.
+## Phase 3: Android Wi-Fi Observation & Deduplication Feed (Completed)
+- [x] Implement Wi-Fi observation collector using Android Wi-Fi scan results (`WifiManager.getScanResults()`).
+- [x] Handle Wi-Fi permissions, scan throttling, and location service requirements.
+- [x] Normalize Wi-Fi access point observations (SSID, BSSID, RSSI, frequency, capabilities) into `Observation`.
+- [x] Implement dedicated Material 3 Wi-Fi discovery feed and channel analysis UI with sorting and filtering.
+- [x] Unit test coverage for result mapping, conversion, aggregation, and view models.
 
 ---
 

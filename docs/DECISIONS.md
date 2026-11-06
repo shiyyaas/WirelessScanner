@@ -30,6 +30,28 @@ Accepted.
 
 ---
 
+## ADR 006: Android Wi-Fi Discovery Architecture and Permission Strategy
+
+### Context
+Phase 3 introduces passive Wi-Fi access point discovery using Android's standard `WifiManager` APIs.
+Unlike BLE scanning which shifted to `BLUETOOTH_SCAN` on Android 12+, Wi-Fi scanning (`startScan()` and `getScanResults()`) has strict and continuing location requirements across Android 8.0 through 16:
+- Android requires runtime `ACCESS_FINE_LOCATION` and active Location Services (GPS/Network) to return scan results containing SSID and BSSID. Android 13+ introduced `NEARBY_WIFI_DEVICES`, but documentation and OS behavior clarify that for `WifiManager.startScan()` and `getScanResults()`, `ACCESS_FINE_LOCATION` is still required.
+- Android 9+ enforces Wi-Fi scan throttling for foreground applications (typically 4 scans per 2-minute window). `WifiManager.startScan()` returns `false` if rejected or throttled.
+- The `SCAN_RESULTS_AVAILABLE_ACTION` intent provides `EXTRA_RESULTS_UPDATED` boolean to distinguish freshly completed scans from cached results.
+
+### Decision
+- Keep `ACCESS_FINE_LOCATION` across all supported Android versions (API 26–36) without `maxSdkVersion` restrictions, paired with `ACCESS_WIFI_STATE`, `CHANGE_WIFI_STATE`, and `NEARBY_WIFI_DEVICES` (Android 13+).
+- Decouple `WifiManager` using `WifiHardwareScanner` interface and `AndroidWifiScanner` implementation.
+- Handle throttling gracefully: If `startScan()` returns false or broadcasts `EXTRA_RESULTS_UPDATED = false`, display cached results with transparent user notification (`ScanFreshness.Throttled` or `ScanFreshness.Cached`).
+- In `WifiDeviceAggregator`, group observations strictly by `bssid` (never `ssid` alone) to avoid collisions between identically named networks or hidden SSIDs (`<Hidden SSID>`).
+- Do not count cached unchanged results as new observations.
+- Keep Wi-Fi and BLE discoveries strictly separate to maintain radio provenance.
+
+### Status
+Accepted.
+
+---
+
 ## ADR 002: Toolchain Alignment for Android 16 (API 36) Compatibility
 
 ### Context
