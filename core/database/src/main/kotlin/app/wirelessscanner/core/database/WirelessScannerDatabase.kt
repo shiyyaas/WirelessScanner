@@ -14,7 +14,7 @@ import app.wirelessscanner.core.database.entity.ScanSessionEntity
 @Database(
     entities = [ObservationEntity::class, ScanSessionEntity::class],
     version = 1,
-    exportSchema = true
+    exportSchema = false
 )
 @TypeConverters(WirelessDatabaseConverters::class)
 abstract class WirelessScannerDatabase : RoomDatabase() {
