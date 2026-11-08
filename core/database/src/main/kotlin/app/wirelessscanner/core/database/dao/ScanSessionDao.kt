@@ -19,10 +19,10 @@ interface ScanSessionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSession(session: ScanSessionEntity)
 
-    @Query("UPDATE scan_sessions SET sessionName = :newName WHERE sessionId = :sessionId")
+    @Query("UPDATE scan_sessions SET name = :newName WHERE sessionId = :sessionId")
     suspend fun updateSessionName(sessionId: String, newName: String)
 
-    @Query("UPDATE scan_sessions SET endTimeEpochMillis = :endTime, isCompleted = 1 WHERE sessionId = :sessionId")
+    @Query("UPDATE scan_sessions SET endTimeEpochMillis = :endTime WHERE sessionId = :sessionId")
     suspend fun completeSession(sessionId: String, endTime: Long)
 
     @Query("DELETE FROM scan_sessions WHERE sessionId = :sessionId")
