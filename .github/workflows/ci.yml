@@ -32,6 +32,11 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Accept Android SDK Licenses & Install Platform 36
+        run: |
+          echo "y" | sudo ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          sudo ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager "platforms;android-36" "build-tools;35.0.0" || true
+
       - name: Run Core Model Unit Tests
         run: ./gradlew :core:model:test --no-daemon --stacktrace --info
 
