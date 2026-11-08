@@ -33,18 +33,18 @@ jobs:
         run: chmod +x gradlew
 
       - name: Run Core Model Unit Tests
-        run: ./gradlew :core:model:test --no-daemon
+        run: ./gradlew :core:model:test --no-daemon --stacktrace --info
 
       - name: Run App Unit Tests
-        run: ./gradlew :app:testDebugUnitTest --no-daemon
+        run: ./gradlew :app:testDebugUnitTest --no-daemon --stacktrace --info
 
       - name: Assemble Release APK
         # If it's a tag, we build the release variant instead of debug
         run: |
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            ./gradlew :app:assembleRelease --no-daemon
+            ./gradlew :app:assembleRelease --no-daemon --stacktrace --info
           else
-            ./gradlew :app:assembleDebug --no-daemon
+            ./gradlew :app:assembleDebug --no-daemon --stacktrace --info
           fi
 
       - name: Upload Build Artifact

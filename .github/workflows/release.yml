@@ -30,11 +30,11 @@ jobs:
 
       - name: Run Unit Tests
         run: |
-          ./gradlew :core:model:test --no-daemon
-          ./gradlew :app:testDebugUnitTest --no-daemon
+          ./gradlew :core:model:test --no-daemon --stacktrace --info
+          ./gradlew :app:testDebugUnitTest --no-daemon --stacktrace --info
 
       - name: Assemble Release APK
-        run: ./gradlew :app:assembleRelease --no-daemon
+        run: ./gradlew :app:assembleRelease --no-daemon --stacktrace --info
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
