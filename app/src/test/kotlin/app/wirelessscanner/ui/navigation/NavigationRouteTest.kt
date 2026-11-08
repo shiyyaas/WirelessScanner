@@ -9,7 +9,7 @@ class NavigationRouteTest {
     fun `all top level destinations have unique non-empty routes and titles`() {
         val destinations = Screen.topLevelDestinations
 
-        assertThat(destinations).hasSize(4)
+        assertThat(destinations).hasSize(5)
 
         val routes = destinations.map { it.route }
         assertThat(routes).containsNoDuplicates()
@@ -34,6 +34,12 @@ class NavigationRouteTest {
     fun `observations screen metadata is correctly defined`() {
         assertThat(Screen.Observations.route).isEqualTo("observations")
         assertThat(Screen.Observations.title).isEqualTo("Observations")
+    }
+
+    @Test
+    fun `wifi screen metadata is correctly defined`() {
+        assertThat(Screen.Wifi.route).isEqualTo("wifi")
+        assertThat(Screen.Wifi.title).isEqualTo("Wi-Fi")
     }
 
     @Test

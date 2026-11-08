@@ -23,6 +23,7 @@ import app.wirelessscanner.ui.screens.dashboard.DashboardScreen
 import app.wirelessscanner.ui.screens.observations.ObservationsScreen
 import app.wirelessscanner.ui.screens.receivers.ReceiversScreen
 import app.wirelessscanner.ui.screens.settings.SettingsScreen
+import app.wirelessscanner.ui.screens.wifi.WifiScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -88,6 +89,9 @@ fun AppNavHost(
             }
             composable(Screen.Observations.route) {
                 ObservationsScreen()
+            }
+            composable(Screen.Wifi.route) {
+                WifiScreen()
             }
             composable(Screen.Receivers.route) {
                 ReceiversScreen()

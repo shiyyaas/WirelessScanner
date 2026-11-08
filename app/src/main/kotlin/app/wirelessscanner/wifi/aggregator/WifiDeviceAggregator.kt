@@ -1,96 +1,121 @@
 package app.wirelessscanner.wifi.aggregator
 
 import app.wirelessscanner.core.model.Observation
-import app.wirelessscanner.wifi.model.DiscoveredWifiNetwork
+import app.wirelessscanner.core.model.RadioType
+import app.wirelessscanner.wifi.model.DiscoveredWifiAccessPoint
+import app.wirelessscanner.wifi.model.WifiBand
+import app.wirelessscanner.wifi.model.WifiSecurityType
+import app.wirelessscanner.wifi.util.WifiFrequencyConverter
+import java.util.concurrent.ConcurrentHashMap
 
 class WifiDeviceAggregator(
-    private val maxHistorySize: Int = 30
+    private val maxRssiHistory: Int = 30
 ) {
-    private val networksMap = mutableMapOf<String, NetworkRecord>()
+    private val accessPoints = ConcurrentHashMap<String, DiscoveredWifiAccessPoint>()
 
-    private data class NetworkRecord(
-        val bssid: String,
-        var ssid: String?,
-        var latestObservation: Observation,
-        var observationCount: Int,
-        val firstSeenEpochMillis: Long,
-        var lastSeenEpochMillis: Long,
-        val rssiHistory: MutableList<Int>,
-        var frequency: Int,
-        var capabilities: String,
-        var channelWidth: Int
-    )
+    fun ingest(observation: Observation, isFresh: Boolean = true): DiscoveredWifiAccessPoint {
+        require(observation.radioType == RadioType.WIFI) {
+            "WifiDeviceAggregator only processes Wi-Fi observations, got ${observation.radioType}"
+        }
 
-    fun ingest(observation: Observation) {
         val bssid = observation.rawAddress
-        val rssi = observation.signalStrength.dbm
-        val frequency = observation.metadata["frequency"]?.toIntOrNull() ?: 2412
-        val capabilities = observation.metadata["capabilities"] ?: ""
-        val channelWidth = observation.metadata["channelWidth"]?.toIntOrNull() ?: 20
+        val rssiDbm = observation.signalStrength.dbm
+        val timestamp = observation.timestampEpochMillis
 
-        val existing = networksMap[bssid]
-        if (existing != null) {
-            existing.observationCount++
-            existing.lastSeenEpochMillis = observation.timestampEpochMillis
-            existing.latestObservation = observation
-            if (!observation.advertisedName.isNullOrBlank()) {
-                existing.ssid = observation.advertisedName
-            }
-            existing.frequency = frequency
-            existing.capabilities = capabilities
-            existing.channelWidth = channelWidth
+        val freqMhz = observation.metadata["frequency"]?.toIntOrNull() ?: 0
+        val channel = observation.metadata["channel"]?.toIntOrNull()
+            ?: WifiFrequencyConverter.frequencyToChannel(freqMhz)
+        val band = observation.metadata["band"]?.let {
+            try { WifiBand.valueOf(it) } catch (_: Exception) { null }
+        } ?: WifiFrequencyConverter.frequencyToBand(freqMhz)
+        val width = observation.metadata["channelWidth"] ?: "Unknown"
+        val caps = observation.metadata["capabilities"] ?: ""
+        val secType = observation.metadata["securityType"]?.let {
+            try { WifiSecurityType.valueOf(it) } catch (_: Exception) { null }
+        } ?: WifiFrequencyConverter.parseSecurityType(caps)
 
-            existing.rssiHistory.add(rssi)
-            if (existing.rssiHistory.size > maxHistorySize) {
-                existing.rssiHistory.removeAt(0)
+        return accessPoints.compute(bssid) { _, existing ->
+            if (existing == null) {
+                DiscoveredWifiAccessPoint(
+                    bssid = bssid,
+                    ssid = observation.advertisedName,
+                    latestRssi = observation.signalStrength,
+                    medianRssi = rssiDbm,
+                    rssiHistory = listOf(rssiDbm),
+                    frequencyMhz = freqMhz,
+                    channel = channel,
+                    band = band,
+                    channelWidth = width,
+                    securityType = secType,
+                    capabilities = caps,
+                    firstSeenEpochMillis = timestamp,
+                    lastSeenEpochMillis = timestamp,
+                    observationCount = 1,
+                    isFresh = isFresh,
+                    metadata = observation.metadata
+                )
+            } else {
+                val isNewObservation = isFresh
+
+                val updatedHistory = if (isNewObservation) {
+                    (existing.rssiHistory + rssiDbm).takeLast(maxRssiHistory)
+                } else {
+                    existing.rssiHistory
+                }
+
+                val updatedMedian = if (isNewObservation) {
+                    calculateMedian(updatedHistory)
+                } else {
+                    existing.medianRssi
+                }
+
+                val updatedSsid = observation.advertisedName?.takeIf { it.isNotBlank() }
+                    ?: existing.ssid
+
+                existing.copy(
+                    ssid = updatedSsid,
+                    latestRssi = if (isNewObservation) observation.signalStrength else existing.latestRssi,
+                    medianRssi = updatedMedian,
+                    rssiHistory = updatedHistory,
+                    frequencyMhz = if (freqMhz != 0) freqMhz else existing.frequencyMhz,
+                    channel = if (channel != 0) channel else existing.channel,
+                    band = if (band != WifiBand.UNKNOWN) band else existing.band,
+                    channelWidth = if (width != "Unknown") width else existing.channelWidth,
+                    securityType = if (secType != WifiSecurityType.UNKNOWN) secType else existing.securityType,
+                    capabilities = if (caps.isNotBlank()) caps else existing.capabilities,
+                    lastSeenEpochMillis = if (isNewObservation) maxOf(existing.lastSeenEpochMillis, timestamp) else existing.lastSeenEpochMillis,
+                    observationCount = if (isNewObservation) existing.observationCount + 1 else existing.observationCount,
+                    isFresh = isFresh,
+                    metadata = existing.metadata + observation.metadata
+                )
             }
-        } else {
-            networksMap[bssid] = NetworkRecord(
-                bssid = bssid,
-                ssid = observation.advertisedName,
-                latestObservation = observation,
-                observationCount = 1,
-                firstSeenEpochMillis = observation.timestampEpochMillis,
-                lastSeenEpochMillis = observation.timestampEpochMillis,
-                rssiHistory = mutableListOf(rssi),
-                frequency = frequency,
-                capabilities = capabilities,
-                channelWidth = channelWidth
-            )
+        }!!
+    }
+
+    fun markAllAsCached() {
+        for ((key, ap) in accessPoints) {
+            if (ap.isFresh) {
+                accessPoints[key] = ap.copy(isFresh = false)
+            }
         }
     }
 
-    fun getNetworks(): List<DiscoveredWifiNetwork> {
-        return networksMap.values.map { record ->
-            val medianRssi = calculateMedian(record.rssiHistory)
-            DiscoveredWifiNetwork(
-                bssid = record.bssid,
-                ssid = record.ssid,
-                latestObservation = record.latestObservation,
-                observationCount = record.observationCount,
-                firstSeenEpochMillis = record.firstSeenEpochMillis,
-                lastSeenEpochMillis = record.lastSeenEpochMillis,
-                rssiHistory = record.rssiHistory.toList(),
-                medianRssi = medianRssi,
-                frequency = record.frequency,
-                capabilities = record.capabilities,
-                channelWidth = record.channelWidth
-            )
-        }.sortedByDescending { it.lastSeenEpochMillis }
-    }
+    fun currentAccessPoints(): List<DiscoveredWifiAccessPoint> = accessPoints.values.toList()
 
     fun clear() {
-        networksMap.clear()
+        accessPoints.clear()
     }
 
-    private fun calculateMedian(values: List<Int>): Int {
-        if (values.isEmpty()) return -100
-        val sorted = values.sorted()
-        val middle = sorted.size / 2
-        return if (sorted.size % 2 == 0) {
-            (sorted[middle - 1] + sorted[middle]) / 2
-        } else {
-            sorted[middle]
+    companion object {
+        internal fun calculateMedian(values: List<Int>): Int {
+            if (values.isEmpty()) return 0
+            val sorted = values.sorted()
+            val size = sorted.size
+            return if (size % 2 == 1) {
+                sorted[size / 2]
+            } else {
+                (sorted[size / 2 - 1] + sorted[size / 2]) / 2
+            }
         }
     }
 }

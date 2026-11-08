@@ -6,86 +6,138 @@ import app.wirelessscanner.core.model.Observation
 import app.wirelessscanner.core.model.RadioType
 import app.wirelessscanner.core.model.ReceiverSource
 import app.wirelessscanner.core.model.SignalStrength
+import app.wirelessscanner.wifi.model.DiscoveredWifiAccessPoint
+import app.wirelessscanner.wifi.model.WifiBand
+import app.wirelessscanner.wifi.model.WifiSecurityType
+import app.wirelessscanner.wifi.util.WifiFrequencyConverter
 import java.util.UUID
 
+/**
+ * Maps Android [ScanResult] instances into domain [Observation] and [DiscoveredWifiAccessPoint].
+ */
 object WifiScanResultMapper {
 
-    fun map(
+    /**
+     * Maps a [ScanResult] to a pure domain [Observation] preserving radio provenance.
+     */
+    fun toObservation(
         scanResult: ScanResult,
-        epochTimestamp: Long = System.currentTimeMillis()
+        timestampEpochMillis: Long = System.currentTimeMillis()
     ): Observation {
-        val bssid = scanResult.bssid ?: "00:00:00:00:00:00"
-        val ssid = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            scanResult.wifiSsid?.toString()?.trim('"')?.takeIf { it.isNotBlank() }
-        } else {
-            null
-        } ?: scanResult.SSID?.takeIf { it.isNotBlank() }
+        val bssid = normalizeBssid(scanResult.BSSID)
+        val ssid = normalizeSsid(scanResult.SSID)
+        val rssiDbm = scanResult.level
+        val freq = scanResult.frequency
+        val channel = WifiFrequencyConverter.frequencyToChannel(freq)
+        val band = WifiFrequencyConverter.frequencyToBand(freq)
+        val capabilities = scanResult.capabilities ?: ""
+        val securityType = WifiFrequencyConverter.parseSecurityType(capabilities)
+        val channelWidth = extractChannelWidth(scanResult)
 
-        val rssiDbm = scanResult.level.coerceIn(SignalStrength.VALID_RANGE)
-        val signalStrength = SignalStrength(rssiDbm)
+        val metadata = mutableMapOf<String, String>()
+        metadata["bssid"] = bssid
+        if (!ssid.isNullOrBlank()) {
+            metadata["ssid"] = ssid
+        }
+        metadata["frequency"] = freq.toString()
+        metadata["channel"] = channel.toString()
+        metadata["band"] = band.name
+        metadata["channelWidth"] = channelWidth
+        metadata["securityType"] = securityType.name
+        metadata["capabilities"] = capabilities
+        metadata["timestamp"] = scanResult.timestamp.toString()
 
-        val metadata = mutableMapOf<String, String>().apply {
-            put("frequency", scanResult.frequency.toString())
-            put("capabilities", scanResult.capabilities ?: "")
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                put("channelWidth", scanResult.channelWidth.toString())
-                put("centerFreq0", scanResult.centerFreq0.toString())
-                put("centerFreq1", scanResult.centerFreq1.toString())
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                put("wifiStandard", scanResult.wifiStandard.toString())
-            }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            metadata["wifiStandard"] = scanResult.wifiStandard.toString()
         }
 
-        val rawBytes = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            scanResult.informationElements?.flatMap { ie ->
-                ie.bytes?.toList() ?: emptyList()
-            } ?: emptyList()
-        } else {
-            emptyList()
-        }
-
+        val clampedRssi = rssiDbm.coerceIn(SignalStrength.VALID_RANGE)
         return Observation(
             id = UUID.randomUUID().toString(),
-            timestampEpochMillis = epochTimestamp,
+            timestampEpochMillis = timestampEpochMillis,
             radioType = RadioType.WIFI,
             receiverSource = ReceiverSource.Internal(),
             rawAddress = bssid,
             advertisedName = ssid,
-            signalStrength = signalStrength,
-            rawPayload = rawBytes,
+            signalStrength = SignalStrength(clampedRssi),
+            rawPayload = emptyList(), // Android Wi-Fi scan results do not expose raw byte frame payload
             metadata = metadata
         )
     }
-}
 
-data class TestWifiPayload(
-    val bssid: String,
-    val ssid: String?,
-    val rssi: Int,
-    val frequency: Int,
-    val capabilities: String = "",
-    val channelWidth: Int = 20
-)
+    /**
+     * Maps a [ScanResult] directly to a [DiscoveredWifiAccessPoint].
+     */
+    fun toAccessPoint(
+        scanResult: ScanResult,
+        isFresh: Boolean = true,
+        timestampEpochMillis: Long = System.currentTimeMillis()
+    ): DiscoveredWifiAccessPoint {
+        val bssid = normalizeBssid(scanResult.BSSID)
+        val ssid = normalizeSsid(scanResult.SSID)
+        val rssiDbm = scanResult.level
+        val freq = scanResult.frequency
+        val channel = WifiFrequencyConverter.frequencyToChannel(freq)
+        val band = WifiFrequencyConverter.frequencyToBand(freq)
+        val capabilities = scanResult.capabilities ?: ""
+        val securityType = WifiFrequencyConverter.parseSecurityType(capabilities)
+        val channelWidth = extractChannelWidth(scanResult)
 
-object WifiPayloadMapper {
-    fun map(payload: TestWifiPayload, epochTimestamp: Long = System.currentTimeMillis()): Observation {
-        val rssiDbm = payload.rssi.coerceIn(SignalStrength.VALID_RANGE)
-        val metadata = mapOf(
-            "frequency" to payload.frequency.toString(),
-            "capabilities" to payload.capabilities,
-            "channelWidth" to payload.channelWidth.toString()
-        )
-        return Observation(
-            id = UUID.randomUUID().toString(),
-            timestampEpochMillis = epochTimestamp,
-            radioType = RadioType.WIFI,
-            receiverSource = ReceiverSource.Internal(),
-            rawAddress = payload.bssid,
-            advertisedName = payload.ssid?.takeIf { it.isNotBlank() },
-            signalStrength = SignalStrength(rssiDbm),
-            rawPayload = emptyList(),
+        val metadata = mutableMapOf<String, String>()
+        metadata["bssid"] = bssid
+        if (!ssid.isNullOrBlank()) metadata["ssid"] = ssid
+        metadata["frequency"] = freq.toString()
+        metadata["channel"] = channel.toString()
+        metadata["band"] = band.name
+        metadata["channelWidth"] = channelWidth
+        metadata["securityType"] = securityType.name
+        metadata["capabilities"] = capabilities
+        metadata["timestamp"] = scanResult.timestamp.toString()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            metadata["wifiStandard"] = scanResult.wifiStandard.toString()
+        }
+
+        val clampedRssi = rssiDbm.coerceIn(SignalStrength.VALID_RANGE)
+        return DiscoveredWifiAccessPoint(
+            bssid = bssid,
+            ssid = ssid,
+            latestRssi = SignalStrength(clampedRssi),
+            medianRssi = clampedRssi,
+            rssiHistory = listOf(clampedRssi),
+            frequencyMhz = freq,
+            channel = channel,
+            band = band,
+            channelWidth = channelWidth,
+            securityType = securityType,
+            capabilities = capabilities,
+            firstSeenEpochMillis = timestampEpochMillis,
+            lastSeenEpochMillis = timestampEpochMillis,
+            observationCount = 1,
+            isFresh = isFresh,
             metadata = metadata
         )
+    }
+
+    private fun normalizeBssid(bssid: String?): String {
+        return if (bssid.isNullOrBlank()) {
+            "00:00:00:00:00:00"
+        } else {
+            bssid.trim().uppercase()
+        }
+    }
+
+    private fun normalizeSsid(ssid: String?): String? {
+        if (ssid == null) return null
+        val clean = ssid.trim().trim('"', '\'')
+        return if (clean.isBlank() || clean == "<unknown ssid>") null else clean
+    }
+
+    private fun extractChannelWidth(scanResult: ScanResult): String {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            WifiFrequencyConverter.channelWidthToString(scanResult.channelWidth)
+        } else {
+            "20 MHz"
+        }
     }
 }
