@@ -2,7 +2,7 @@
 
 ## Overview
 
-WirelessScanner is an Android application designed for lawful, passive observation of nearby wireless signals (BLE, Wi-Fi, and in future milestones, cellular signals and optional external USB hardware receivers such as ESP32 CYD).
+WirelessScanner is an Android application designed for lawful, passive observation of nearby wireless signals (BLE, Wi-Fi, and in future milestones, cellular signals and optional external USB hardware receivers such as ESP32-S3).
 
 This document outlines the architectural principles, component structure, and design patterns guiding development.
 
@@ -12,31 +12,31 @@ This document outlines the architectural principles, component structure, and de
 
 1. **Passive Observation Only**: The application strictly observes signals broadcast over the air or captured by attached receiver hardware. It does not perform active intrusion, exploitation, spoofing, deauthentication, or interception of protected communications.
 2. **Provenance & Data Integrity**:
-   - Every observation records its original `receiverSource` (e.g. `InternalRadio` vs `ExternalUsbReceiver`), precise timestamp, raw identifier, and observed signal strength.
+   - Every observation records its original `receiverSource` (`Internal` vs `ExternalUsbReceiver`), precise timestamp, raw identifier, and observed signal strength.
    - Observational evidence is never synthesized or fabricated. RSSI alone must never be used to claim physical distance or direction without verified multi-sensor fusion.
-   - Physical identity across radios is never presumed: matching MAC addresses, BSSIDs, or advertised names do **not** imply that two observations originate from the same physical device due to address randomization and common naming schemes.
+   - Physical identity across radios is never presumed: matching MAC addresses, BSSIDs, or advertised names do **not** imply that two observations originate from the same physical device due to address randomization.
    - Classifications are treated as probabilistic hypotheses with supporting evidence, not absolute facts.
 3. **Hardware Agnosticism & Optional Peripherals**:
-   - Internal Android device radios (Bluetooth Adapter, Wi-Fi Manager) and optional external receivers (USB CDC/UART connected ESP32 microcontrollers) are modeled as distinct observation sources.
-   - External hardware is completely optional; the application functions standalone on any compatible Android device.
+   - Internal Android device radios and optional external receivers (USB CDC connected ESP32-S3 microcontrollers) are modeled as distinct observation sources.
 4. **Modularity & Separation of Concerns**:
    - Radio-specific protocol decoding is isolated from core models.
-   - Core domain models are free from Android SDK dependencies to guarantee testability and portability.
-   - Unidirectional Data Flow (UDF) is maintained between the presentation, domain, and data/collector layers.
+   - Core domain models (`:core:model`) are free from Android SDK dependencies to guarantee testability and portability.
+   - Persistence is isolated in `:core:database`.
 
 ---
 
-## Module Structure & BLE Component Architecture
+## Module Structure & Component Architecture
 
 ```
 WirelessScanner/
 ├── core/
-│   └── model/              # Pure Kotlin JVM module (no Android dependencies)
-│       └── Domain models (RadioType, ReceiverSource, Observation, SignalStrength)
+│   ├── model/              # Pure Kotlin JVM module (no Android dependencies)
+│   │       └── Domain models (RadioType, ReceiverSource, Observation, SignalStrength)
+│   └── database/           # Room persistence module (scan sessions & observations)
 ├── app/                    # Android Application module
 │   ├── ble/                # Bluetooth Low Energy Discovery
 │   │   ├── aggregator/     # BleDeviceAggregator (rolling median, count, history)
-│   │   ├── model/          # DiscoveredBleDevice domain model & BleAddressType
+│   │   ├── model/          # DiscoveredBleDevice domain model
 │   │   ├── permission/     # BlePermissionManager, BluetoothStateManager
 │   │   └── scanner/        # AndroidBleScanner, BleScanSessionManager, BleScanResultMapper
 │   ├── wifi/               # Wi-Fi Access Point Discovery
@@ -44,7 +44,7 @@ WirelessScanner/
 │   │   ├── model/          # DiscoveredWifiAccessPoint domain model, WifiBand, WifiSecurityType
 │   │   ├── permission/     # WifiPermissionManager
 │   │   ├── scanner/        # AndroidWifiScanner, WifiScanSessionManager, WifiScanResultMapper
-│   │   └── util/           # WifiFrequencyConverter (band, channel, width, security parsing)
+│   │   └── util/           # WifiFrequencyConverter & security parsing
 │   ├── collector/          # RadioCollector abstraction & CollectorStatus
 │   └── ui/                 # Jetpack Compose UI, Material 3 Theme, Navigation
 │       ├── dashboard/      # Overview dashboard
@@ -55,20 +55,6 @@ WirelessScanner/
 │       └── navigation/     # NavHost and Destination graph
 └── docs/                   # Architecture, Roadmap, and Decision records
 ```
-
-### Bluetooth Low Energy Observation Flow
-1. **Hardware Scanner Abstraction**: `BleHardwareScanner` decouples the low-level Android `BluetoothLeScanner` from session logic. `AndroidBleScanner` uses `callbackFlow` to safely stream scan results and cleanly release scanner callbacks upon completion or cancellation.
-2. **Result Parsing & Immutability**: `BleScanResultMapper` safely maps `ScanResult` and `ScanRecord` to `Observation` (`RadioType.BLE`, `ReceiverSource.Internal`), ensuring byte arrays are immutably preserved as `List<Byte>`.
-3. **Session Management**: `BleScanSessionManager` orchestrates user-controlled 15-second discovery sessions, preventing concurrent duplicate scans, exposing live countdown metrics, and automatically halting on timeout.
-4. **In-Memory Aggregation**: `BleDeviceAggregator` groups observations by unique `rawAddress`, preserving first/last seen timestamps, count, latest RSSI, a 30-sample rolling RSSI history, rolling median calculation, and merging late-arriving advertised names.
-5. **Presentation Layer**: `ObservationsViewModel` and `ObservationsScreen` expose user controls (Start/Stop, filter by name/query, sort by signal/time/count), hardware banners (Bluetooth disabled, permission required), and expandable advertisement details.
-
-### Wi-Fi Observation Flow
-1. **Hardware Scanner Abstraction**: `WifiHardwareScanner` decouples Android `WifiManager` operations from session logic. `AndroidWifiScanner` listens for `WifiManager.SCAN_RESULTS_AVAILABLE_ACTION` broadcasts via `callbackFlow`, safely releasing receiver registrations.
-2. **Throttling & Freshness Handling**: Checks the return value of `WifiManager.startScan()`. If false (throttled/busy), cached scan results are provided with clear user notifications. The broadcast `EXTRA_RESULTS_UPDATED` boolean indicates fresh vs stale/cached results.
-3. **Session Management**: `WifiScanSessionManager` implements `RadioCollector`, prevents concurrent overlapping scans via Mutex, tracks scan freshness (`ScanFreshness`), and records the last successful scan epoch timestamp.
-4. **In-Memory Aggregation**: `WifiDeviceAggregator` groups observations by unique BSSID (never SSID alone), updates first/last seen timestamps, maintains a 30-sample bounded RSSI history window, calculates rolling median RSSI, and ignores unchanged cached results from observation count increments.
-5. **Channel Analysis & Presentation**: `WifiViewModel` and `WifiScreen` provide access point discovery, sorting/filtering (band, security, signal, SSID), expandable AP cards, and channel utilization analysis (access point count and average RSSI per channel, noting that AP count does not prove channel congestion).
 
 ---
 
@@ -91,4 +77,13 @@ data class Observation(
 ```
 
 - `rawPayload` is stored as an immutable `List<Byte>` to prevent external mutation.
-- `receiverSource` explicitly tags whether an observation was received by the Android device's internal radio or by an external hardware peripheral.
+- `receiverSource` explicitly tags whether an observation was received by the Android device's internal radio (`Internal`) or by an external hardware peripheral (`ExternalUsbReceiver`).
+
+---
+
+## Documentation Links
+
+- [Development Roadmap](ROADMAP.md)
+- [Architecture Decision Records](DECISIONS.md)
+- [Alignment Report](ALIGNMENT_REPORT.md)
+- [Provenance Audit](PROVENANCE_AUDIT.md)
