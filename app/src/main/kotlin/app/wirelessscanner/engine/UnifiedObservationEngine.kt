@@ -27,7 +27,8 @@ class UnifiedObservationEngine(
         updateObservations(observations, RadioType.WIFI)
     }
 
-    private synchronized fun updateObservations(newObs: List<Observation>, type: RadioType) {
+    @Synchronized
+    private fun updateObservations(newObs: List<Observation>, type: RadioType) {
         radioFeeds[type] = newObs
         val combined = radioFeeds.values.flatten().sortedByDescending { it.timestampEpochMillis }
         _allObservations.value = combined
