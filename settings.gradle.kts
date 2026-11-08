@@ -25,3 +25,5 @@ dependencyResolutionManagement {
 rootProject.name = "WirelessScanner"
 include(":app")
 include(":core:model")
+include(":core:database")
+include(":core:database")

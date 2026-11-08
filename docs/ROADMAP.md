@@ -36,10 +36,10 @@ This roadmap defines the planned evolutionary phases for WirelessScanner. Each p
 - [x] Unit test coverage for result mapping, conversion, aggregation, and view models.
 ---
 
-## Phase 4: Local Persistence with Room
-- [ ] Implement `:core:database` using Room for storing observation histories and scan sessions.
-- [ ] Exclude sensitive observation databases from Android cloud backup / auto-backup.
-- [ ] Provide user data controls: session ónaming, search, history export, and purge functionality.
+## Phase 4: Local Persistence with Room (Completed)
+- [x] Implement `:core:database` using Room for storing observation histories and scan sessions.
+- [x] Exclude sensitive observation databases from Android cloud backup / auto-backup.
+- [x] Provide user data controls: session naming, search, history export, and purge functionality.
 
 ---
 
